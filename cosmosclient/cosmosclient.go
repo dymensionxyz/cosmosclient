@@ -31,7 +31,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/bytes"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -60,7 +59,7 @@ const (
 // Client is a client to access your chain by querying and broadcasting transactions.
 type Client struct {
 	// RPC is Tendermint RPC.
-	RPC *rpchttp.HTTP
+	RPC *HTTP
 
 	// Factory is a Cosmos SDK tx factory.
 	Factory Factory
@@ -161,7 +160,7 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 		apply(&c)
 	}
 
-	if c.RPC, err = rpchttp.New(c.nodeAddress, "/websocket"); err != nil {
+	if c.RPC, err = NewHttp(c.nodeAddress, "/websocket"); err != nil {
 		return Client{}, err
 	}
 
