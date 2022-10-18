@@ -1,4 +1,4 @@
-module cosmosclient
+module github.com/dymensionxyz/cosmosclient
 
 go 1.18
 
