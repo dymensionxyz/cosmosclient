@@ -1,9 +1,7 @@
 # Cosmos Client
 
-A client to access the settlement-chain (or any other chain) by querying and broadcasting transactions.
+This client provides a standalone client to connect to Cosmos SDK chains from a codebase which already makes use of the cosmos-sdk.
 
-This client cloned from [ignite's cosmosclient](https://github.com/ignite/cli/tree/develop/ignite/pkg/cosmosclient) and it's advantage is that it doesn't use the `cosmos-sdk` config singleton.
+The client was created due to the collision created by the cosmos-sdk config singleton as it only accepts (for example) single address-prefix and coin-type and thus prevents the usage of multiple configs.
 
-The `cosmos-sdk` config singleton use several chain-specific properties (like address-prefix and coin-type) and it is impossible to override these properties using the already-made `cosmosclient`.
-
-So this tool gives the option to use `cosmosclient` for other chains without using the chain-specific properties supplied by the `cosmos-sdk` config.
+This client is based on the work done on [ignite’s cosmosclient](https://github.com/ignite/cli/tree/develop/ignite/pkg/cosmosclient) as is.
