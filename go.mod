@@ -4,8 +4,8 @@ go 1.18
 
 require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/cosmos/cosmos-sdk v0.45.8
-	github.com/cosmos/ibc-go/v3 v3.3.0
+	github.com/cosmos/cosmos-sdk v0.45.5
+	github.com/cosmos/ibc-go/v3 v3.0.1
 	github.com/gogo/protobuf v1.3.3
 	github.com/ignite/cli v0.23.0
 	github.com/pkg/errors v0.9.1
