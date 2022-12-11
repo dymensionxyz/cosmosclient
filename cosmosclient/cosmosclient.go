@@ -205,7 +205,13 @@ func (c Client) Address(accountName string) (sdktypes.AccAddress, error) {
 	if err != nil {
 		return sdktypes.AccAddress{}, err
 	}
-	return account.Info.GetAddress(), nil
+
+	addr, err := account.Address(c.addressPrefix)
+	if err != nil {
+		return sdktypes.AccAddress{}, err
+	}
+
+	return sdktypes.AccAddressFromBech32(addr)
 }
 
 // Context returns the client context.
@@ -405,9 +411,14 @@ func (c *Client) prepareBroadcast(ctx context.Context, accountName string, _ []s
 		return err
 	}
 
+	addr, err := account.Address(c.addressPrefix)
+	if err != nil {
+		return err
+	}
+
 	// make sure that account has enough balances before broadcasting.
 	if c.useFaucet {
-		if err := c.makeSureAccountHasTokens(ctx, account.Address(c.addressPrefix)); err != nil {
+		if err := c.makeSureAccountHasTokens(ctx, addr); err != nil {
 			return err
 		}
 	}
