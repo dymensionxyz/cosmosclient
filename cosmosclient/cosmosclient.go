@@ -206,12 +206,7 @@ func (c Client) Address(accountName string) (sdktypes.AccAddress, error) {
 		return sdktypes.AccAddress{}, err
 	}
 
-	addr, err := account.Address(c.addressPrefix)
-	if err != nil {
-		return sdktypes.AccAddress{}, err
-	}
-
-	return sdktypes.AccAddressFromBech32(addr)
+	return account.Record.GetAddress()
 }
 
 // Context returns the client context.
