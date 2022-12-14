@@ -196,7 +196,16 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 
 // Account gets the account by name
 func (c Client) Account(accountName string) (cosmosaccount.Account, error) {
-	return c.AccountRegistry.GetByName(accountName)
+	//In ignite CLI@v0.23 there is a bug where in some cases err is not returned.
+	//let's overcome it
+	acc, err := c.AccountRegistry.GetByName(accountName)
+	if err != nil {
+		return acc, err
+	}
+	if (acc == cosmosaccount.Account{}) {
+		return acc, fmt.Errorf("got empty account")
+	}
+	return acc, err
 }
 
 // Address returns the account address from account name.
