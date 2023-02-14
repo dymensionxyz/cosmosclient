@@ -48,6 +48,7 @@ const (
 	defaultNodeAddress   = "http://localhost:26657"
 	defaultGasAdjustment = 1.0
 	defaultGasLimit      = 300000
+	defaultFees          = "10000000udym"
 )
 
 const (
@@ -545,5 +546,6 @@ func newFactory(clientCtx client.Context) Factory {
 		WithGasAdjustment(defaultGasAdjustment).
 		WithSignMode(signing.SignMode_SIGN_MODE_UNSPECIFIED).
 		WithAccountRetriever(clientCtx.AccountRetriever).
-		WithTxConfig(clientCtx.TxConfig)
+		WithTxConfig(clientCtx.TxConfig).
+		WithFees(defaultFees)
 }
