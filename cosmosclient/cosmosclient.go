@@ -47,8 +47,6 @@ var errCannotRetrieveFundsFromFaucet = errors.New("cannot retrieve funds from fa
 const (
 	defaultNodeAddress   = "http://localhost:26657"
 	defaultGasAdjustment = 1.0
-	defaultGasLimit      = 300000
-	defaultFees          = "10000000udym"
 )
 
 const (
@@ -85,6 +83,9 @@ type Client struct {
 	homePath           string
 	keyringServiceName string
 	keyringBackend     cosmosaccount.KeyringBackend
+	gasLimit           uint64
+	gasFees            string
+	gasPrices          string
 }
 
 // Option configures your client.
@@ -126,6 +127,27 @@ func WithNodeAddress(addr string) Option {
 func WithAddressPrefix(prefix string) Option {
 	return func(c *Client) {
 		c.addressPrefix = prefix
+	}
+}
+
+// WithGasLimit sets the gas limit
+func WithGasLimit(gasLimit uint64) Option {
+	return func(c *Client) {
+		c.gasLimit = gasLimit
+	}
+}
+
+// WithGasPrices sets the gas prices
+func WithGasPrices(gasPrices string) Option {
+	return func(c *Client) {
+		c.gasPrices = gasPrices
+	}
+}
+
+// WithFee sets the fee amount
+func WithGasFees(fees string) Option {
+	return func(c *Client) {
+		c.gasFees = fees
 	}
 }
 
@@ -190,7 +212,7 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 	}
 
 	c.context = newContext(c).WithKeyring(c.AccountRegistry.Keyring)
-	c.Factory = newFactory(c.context)
+	c.Factory = newFactory(c.context, c)
 
 	return c, nil
 }
@@ -538,14 +560,15 @@ func newContext(c Client) client.Context {
 		WithSkipConfirmation(true)
 }
 
-func newFactory(clientCtx client.Context) Factory {
+func newFactory(clientCtx client.Context, client Client) Factory {
 	return Factory{}.
 		WithChainID(clientCtx.ChainID).
 		WithKeybase(clientCtx.Keyring).
-		WithGas(defaultGasLimit).
+		WithGas(client.gasLimit).
+		WithGasPrices(client.gasPrices).
+		WithFees(client.gasFees).
 		WithGasAdjustment(defaultGasAdjustment).
 		WithSignMode(signing.SignMode_SIGN_MODE_UNSPECIFIED).
 		WithAccountRetriever(clientCtx.AccountRetriever).
-		WithTxConfig(clientCtx.TxConfig).
-		WithFees(defaultFees)
+		WithTxConfig(clientCtx.TxConfig)
 }
