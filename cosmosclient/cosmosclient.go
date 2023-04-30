@@ -18,6 +18,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -36,6 +37,9 @@ import (
 
 	"github.com/ignite/cli/ignite/pkg/cosmosaccount"
 	"github.com/ignite/cli/ignite/pkg/cosmosfaucet"
+
+	"github.com/evmos/ethermint/crypto/hd"
+	ethcodec "github.com/evmos/ethermint/encoding/codec"
 )
 
 // FaucetTransferEnsureDuration is the duration that BroadcastTx will wait when a faucet transfer
@@ -47,7 +51,6 @@ var errCannotRetrieveFundsFromFaucet = errors.New("cannot retrieve funds from fa
 const (
 	defaultNodeAddress   = "http://localhost:26657"
 	defaultGasAdjustment = 1.0
-	defaultGasLimit      = 300000
 )
 
 const (
@@ -67,7 +70,7 @@ type Client struct {
 	// context is a Cosmos SDK client context.
 	context client.Context
 
-	// AccountRegistry is the retistry to access accounts.
+	// AccountRegistry is the registry to access accounts.
 	AccountRegistry cosmosaccount.Registry
 
 	addressPrefix string
@@ -84,6 +87,9 @@ type Client struct {
 	homePath           string
 	keyringServiceName string
 	keyringBackend     cosmosaccount.KeyringBackend
+	gasLimit           uint64
+	gasFees            string
+	gasPrices          string
 }
 
 // Option configures your client.
@@ -125,6 +131,27 @@ func WithNodeAddress(addr string) Option {
 func WithAddressPrefix(prefix string) Option {
 	return func(c *Client) {
 		c.addressPrefix = prefix
+	}
+}
+
+// WithGasLimit sets the gas limit
+func WithGasLimit(gasLimit uint64) Option {
+	return func(c *Client) {
+		c.gasLimit = gasLimit
+	}
+}
+
+// WithGasPrices sets the gas prices
+func WithGasPrices(gasPrices string) Option {
+	return func(c *Client) {
+		c.gasPrices = gasPrices
+	}
+}
+
+// WithFee sets the fee amount
+func WithGasFees(fees string) Option {
+	return func(c *Client) {
+		c.gasFees = fees
 	}
 }
 
@@ -188,15 +215,31 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 		return Client{}, err
 	}
 
-	c.context = newContext(c).WithKeyring(c.AccountRegistry.Keyring)
-	c.Factory = newFactory(c.context)
+	//Overwrite the keyring with EthSecp256k1 supported keyring
+	customKeyring, err := keyring.New(c.keyringServiceName, string(c.keyringBackend), c.homePath, os.Stdin, hd.EthSecp256k1Option())
+	if err != nil {
+		return Client{}, err
+	}
+
+	c.AccountRegistry.Keyring = customKeyring
+	c.context = newContext(c).WithKeyring(customKeyring)
+	c.Factory = newFactory(c.context, c)
 
 	return c, nil
 }
 
 // Account gets the account by name
 func (c Client) Account(accountName string) (cosmosaccount.Account, error) {
-	return c.AccountRegistry.GetByName(accountName)
+	//In ignite CLI@v0.23 there is a bug where in some cases err is not returned.
+	//let's overcome it
+	acc, err := c.AccountRegistry.GetByName(accountName)
+	if err != nil {
+		return acc, err
+	}
+	if (acc == cosmosaccount.Account{}) {
+		return acc, fmt.Errorf("got empty account")
+	}
+	return acc, err
 }
 
 // Address returns the account address from account name.
@@ -513,6 +556,10 @@ func newContext(c Client) client.Context {
 		txConfig          = authtx.NewTxConfig(marshaler, authtx.DefaultSignModes)
 	)
 
+	//Register ethermint interfaces
+	ethcodec.RegisterLegacyAminoCodec(amino)
+	ethcodec.RegisterInterfaces(interfaceRegistry)
+
 	authtypes.RegisterInterfaces(interfaceRegistry)
 	cryptocodec.RegisterInterfaces(interfaceRegistry)
 	sdktypes.RegisterInterfaces(interfaceRegistry)
@@ -534,11 +581,13 @@ func newContext(c Client) client.Context {
 		WithSkipConfirmation(true)
 }
 
-func newFactory(clientCtx client.Context) Factory {
+func newFactory(clientCtx client.Context, client Client) Factory {
 	return Factory{}.
 		WithChainID(clientCtx.ChainID).
 		WithKeybase(clientCtx.Keyring).
-		WithGas(defaultGasLimit).
+		WithGas(client.gasLimit).
+		WithGasPrices(client.gasPrices).
+		WithFees(client.gasFees).
 		WithGasAdjustment(defaultGasAdjustment).
 		WithSignMode(signing.SignMode_SIGN_MODE_UNSPECIFIED).
 		WithAccountRetriever(clientCtx.AccountRetriever).
