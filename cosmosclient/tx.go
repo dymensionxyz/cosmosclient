@@ -32,7 +32,6 @@ func Sign(txf Factory, name string, txBuilder client.TxBuilder, overwriteSig boo
 	if err != nil {
 		return err
 	}
-
 	signerData := authsigning.SignerData{
 		ChainID:       txf.chainID,
 		AccountNumber: txf.accountNumber,
