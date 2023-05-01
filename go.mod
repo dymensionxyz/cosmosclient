@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/cosmos-sdk v0.46.10
-	github.com/cosmos/ibc-go/v3 v3.2.0
 	github.com/evmos/ethermint v0.21.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/ignite/cli v0.25.2
@@ -124,7 +123,6 @@ require (
 )
 
 replace (
-	github.com/cosmos/ibc-go/v3 => github.com/dymensionxyz/ibc-go/v3 v3.0.0-rc2.0.20230105134315-1870174ab6da
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	github.com/tendermint/tendermint => github.com/informalsystems/tendermint v0.34.26
 )
