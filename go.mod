@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/cosmos-sdk v0.46.10
-	github.com/evmos/ethermint v0.21.0
+	github.com/evmos/ethermint v0.20.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/ignite/cli v0.25.2
 	github.com/pkg/errors v0.9.1
