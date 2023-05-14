@@ -90,11 +90,12 @@ type Client struct {
 	keyringBackend     cosmosaccount.KeyringBackend
 	keyringDir         string
 
-	gasLimit     uint64
-	gas          string
-	gasPrices    string
-	fees         string
-	generateOnly bool
+	gasLimit      uint64
+	gas           string
+	gasPrices     string
+	fees          string
+	gasAdjustment float64
+	generateOnly  bool
 }
 
 // Option configures your client.
@@ -189,6 +190,13 @@ func WithFees(fees string) Option {
 	}
 }
 
+// WithGasAdjustment sets the gas adjustment (e.g. 1.3)
+func WithGasAdjustment(gasAdj float64) Option {
+	return func(c *Client) {
+		c.gasAdjustment = gasAdj
+	}
+}
+
 // New creates a new client with given options.
 func New(ctx context.Context, options ...Option) (Client, error) {
 	c := Client{
@@ -200,6 +208,7 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 		faucetMinAmount: defaultFaucetMinAmount,
 		out:             io.Discard,
 		gas:             strconv.Itoa(defaultGasLimit),
+		gasAdjustment:   defaultGasAdjustment,
 	}
 
 	var err error
@@ -574,7 +583,7 @@ func newFactory(clientCtx client.Context, client Client) Factory {
 		WithGas(client.gasLimit).
 		WithGasPrices(client.gasPrices).
 		WithFees(client.fees).
-		WithGasAdjustment(defaultGasAdjustment).
+		WithGasAdjustment(client.gasAdjustment).
 		WithSignMode(signing.SignMode_SIGN_MODE_UNSPECIFIED).
 		WithAccountRetriever(clientCtx.AccountRetriever).
 		WithTxConfig(clientCtx.TxConfig)
