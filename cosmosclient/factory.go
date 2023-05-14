@@ -316,7 +316,10 @@ func (f Factory) BuildSimTx(msgs ...sdk.Msg) ([]byte, error) {
 		}
 
 		// take the first info record just for simulation purposes
-		pk = infos[0].GetPubKey()
+		pk, err = infos[0].GetPubKey()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Create an empty signature literal as the ante handler will populate with a
