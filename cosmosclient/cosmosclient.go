@@ -18,7 +18,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -33,9 +32,6 @@ import (
 
 	"github.com/ignite/cli/ignite/pkg/cosmosaccount"
 	"github.com/ignite/cli/ignite/pkg/cosmosfaucet"
-
-	"github.com/evmos/ethermint/crypto/hd"
-	ethcodec "github.com/evmos/ethermint/encoding/codec"
 )
 
 // FaucetTransferEnsureDuration is the duration that BroadcastTx will wait when a faucet transfer
@@ -249,17 +245,7 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 		return Client{}, err
 	}
 
-	//Overwrite the keyring with EthSecp256k1 supported keyring
-	interfaceRegistry := codectypes.NewInterfaceRegistry()
-	cryptocodec.RegisterInterfaces(interfaceRegistry)
-	cdc := codec.NewProtoCodec(interfaceRegistry)
-	customKeyring, err := keyring.New(c.keyringServiceName, string(c.keyringBackend), c.homePath, os.Stdin, cdc, hd.EthSecp256k1Option())
-	if err != nil {
-		return Client{}, err
-	}
-
-	c.AccountRegistry.Keyring = customKeyring
-	c.context = newContext(c).WithKeyring(customKeyring)
+	c.context = newContext(c).WithKeyring(c.AccountRegistry.Keyring)
 	c.Factory = newFactory(c.context, c)
 
 	return c, nil
@@ -550,10 +536,6 @@ func newContext(c Client) client.Context {
 		marshaler         = codec.NewProtoCodec(interfaceRegistry)
 		txConfig          = authtx.NewTxConfig(marshaler, authtx.DefaultSignModes)
 	)
-
-	//Register ethermint interfaces
-	ethcodec.RegisterLegacyAminoCodec(amino)
-	ethcodec.RegisterInterfaces(interfaceRegistry)
 
 	authtypes.RegisterInterfaces(interfaceRegistry)
 	cryptocodec.RegisterInterfaces(interfaceRegistry)
