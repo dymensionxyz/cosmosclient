@@ -14,7 +14,6 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
@@ -56,6 +55,8 @@ const (
 	orderAsc = "asc"
 )
 
+type broadcastMode string
+
 // Client is a client to access your chain by querying and broadcasting transactions.
 type Client struct {
 	// RPC is Tendermint RPC.
@@ -92,6 +93,7 @@ type Client struct {
 	fees          string
 	gasAdjustment float64
 	generateOnly  bool
+	broadcastMode broadcastMode
 }
 
 // Option configures your client.
@@ -190,6 +192,13 @@ func WithFees(fees string) Option {
 func WithGasAdjustment(gasAdj float64) Option {
 	return func(c *Client) {
 		c.gasAdjustment = gasAdj
+	}
+}
+
+// WithBroadcastMode sets the broadcast mode
+func WithBroadcastMode(broadcastMode broadcastMode) Option {
+	return func(c *Client) {
+		c.broadcastMode = broadcastMode
 	}
 }
 
@@ -552,7 +561,7 @@ func newContext(c Client) client.Context {
 		WithInput(os.Stdin).
 		WithOutput(c.out).
 		WithAccountRetriever(AccountRetriever{addressPrefix: c.addressPrefix}).
-		WithBroadcastMode(flags.BroadcastBlock).
+		WithBroadcastMode(string(c.broadcastMode)).
 		WithHomeDir(c.homePath).
 		WithClient(c.RPC).
 		WithSkipConfirmation(true)
