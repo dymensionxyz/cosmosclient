@@ -561,7 +561,7 @@ func newContext(c Client) client.Context {
 	)
 
 	//Register ethermint interfaces
-	ethcodec.RegisterLegacyAminoCodec(amino)
+	//ethcodec.RegisterLegacyAminoCodec(amino)
 	ethcodec.RegisterInterfaces(interfaceRegistry)
 
 	authtypes.RegisterInterfaces(interfaceRegistry)
