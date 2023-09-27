@@ -34,7 +34,6 @@ import (
 	"github.com/ignite/cli/ignite/pkg/cosmosfaucet"
 
 	"github.com/evmos/ethermint/crypto/hd"
-	ethcodec "github.com/evmos/ethermint/encoding/codec"
 )
 
 // FaucetTransferEnsureDuration is the duration that BroadcastTx will wait when a faucet transfer
@@ -563,7 +562,7 @@ func newContext(c Client) client.Context {
 
 	//Register ethermint interfaces
 	//ethcodec.RegisterLegacyAminoCodec(amino)
-	ethcodec.RegisterInterfaces(interfaceRegistry)
+	//ethcodec.RegisterInterfaces(interfaceRegistry)
 
 	authtypes.RegisterInterfaces(interfaceRegistry)
 	//cryptocodec.RegisterInterfaces(interfaceRegistry)
