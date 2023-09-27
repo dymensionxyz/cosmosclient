@@ -261,6 +261,7 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 	//Overwrite the keyring with EthSecp256k1 supported keyring
 	interfaceRegistry := codectypes.NewInterfaceRegistry()
 	cryptocodec.RegisterInterfaces(interfaceRegistry)
+	ethcodec.RegisterInterfaces(interfaceRegistry)
 	cdc := codec.NewProtoCodec(interfaceRegistry)
 	customKeyring, err := keyring.New(c.keyringServiceName, string(c.keyringBackend), c.homePath, os.Stdin, cdc, hd.EthSecp256k1Option())
 	if err != nil {
