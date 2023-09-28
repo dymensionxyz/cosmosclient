@@ -561,9 +561,6 @@ func newContext(c Client) client.Context {
 		txConfig          = authtx.NewTxConfig(marshaler, authtx.DefaultSignModes)
 	)
 
-	//Register ethermint interfaces
-	//ethcodec.RegisterLegacyAminoCodec(amino)
-	ethcodec.RegisterInterfaces(interfaceRegistry)
 	authtypes.RegisterInterfaces(interfaceRegistry)
 	cryptocodec.RegisterInterfaces(interfaceRegistry)
 	sdktypes.RegisterInterfaces(interfaceRegistry)
