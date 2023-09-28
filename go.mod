@@ -5,12 +5,10 @@ go 1.18
 require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/cosmos-sdk v0.46.13
-	github.com/evmos/ethermint v0.20.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/ignite/cli v0.25.2
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.8.2
 	github.com/tendermint/tendermint v0.34.28
 	google.golang.org/grpc v1.54.0
 )
