@@ -261,7 +261,6 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 	//Overwrite the keyring with EthSecp256k1 supported keyring
 	interfaceRegistry := codectypes.NewInterfaceRegistry()
 	cryptocodec.RegisterInterfaces(interfaceRegistry)
-	// same in both
 	ethcodec.RegisterInterfaces(interfaceRegistry)
 	cdc := codec.NewProtoCodec(interfaceRegistry)
 	customKeyring, err := keyring.New(c.keyringServiceName, string(c.keyringBackend), c.homePath, os.Stdin, cdc, hd.EthSecp256k1Option())
@@ -565,12 +564,10 @@ func newContext(c Client) client.Context {
 	//Register ethermint interfaces
 	//ethcodec.RegisterLegacyAminoCodec(amino)
 	ethcodec.RegisterInterfaces(interfaceRegistry)
-
 	authtypes.RegisterInterfaces(interfaceRegistry)
-	//cryptocodec.RegisterInterfaces(interfaceRegistry)
+	cryptocodec.RegisterInterfaces(interfaceRegistry)
 	sdktypes.RegisterInterfaces(interfaceRegistry)
 	staking.RegisterInterfaces(interfaceRegistry)
-	//cryptocodec.RegisterInterfaces(interfaceRegistry)
 
 	return client.Context{}.
 		WithChainID(c.chainID).
