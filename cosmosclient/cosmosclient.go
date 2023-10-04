@@ -560,7 +560,8 @@ func newContext(c Client) client.Context {
 		marshaler         = codec.NewProtoCodec(interfaceRegistry)
 		txConfig          = authtx.NewTxConfig(marshaler, authtx.DefaultSignModes)
 	)
-
+	//Register ethermint interfaces
+	ethcodec.RegisterInterfaces(interfaceRegistry)
 	authtypes.RegisterInterfaces(interfaceRegistry)
 	cryptocodec.RegisterInterfaces(interfaceRegistry)
 	sdktypes.RegisterInterfaces(interfaceRegistry)
