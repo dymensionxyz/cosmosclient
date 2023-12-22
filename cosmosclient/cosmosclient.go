@@ -35,6 +35,7 @@ import (
 
 	ethcodec "github.com/evmos/evmos/v12/crypto/codec"
 	"github.com/evmos/evmos/v12/crypto/hd"
+	ethermint "github.com/evmos/evmos/v12/types"
 )
 
 // FaucetTransferEnsureDuration is the duration that BroadcastTx will wait when a faucet transfer
@@ -566,6 +567,7 @@ func newContext(c Client) client.Context {
 	cryptocodec.RegisterInterfaces(interfaceRegistry)
 	sdktypes.RegisterInterfaces(interfaceRegistry)
 	staking.RegisterInterfaces(interfaceRegistry)
+	ethermint.RegisterInterfaces(interfaceRegistry)
 
 	return client.Context{}.
 		WithChainID(c.chainID).
