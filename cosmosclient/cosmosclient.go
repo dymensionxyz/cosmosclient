@@ -33,8 +33,8 @@ import (
 	"github.com/ignite/cli/ignite/pkg/cosmosaccount"
 	"github.com/ignite/cli/ignite/pkg/cosmosfaucet"
 
-	ethcodec "github.com/evmos/evmos/v12/crypto/codec"
-	"github.com/evmos/evmos/v12/crypto/hd"
+	ethcodec "github.com/evmos/ethermint/crypto/codec"
+	"github.com/evmos/ethermint/crypto/hd"
 )
 
 // FaucetTransferEnsureDuration is the duration that BroadcastTx will wait when a faucet transfer
