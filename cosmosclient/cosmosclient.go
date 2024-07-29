@@ -25,12 +25,11 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/dymensionxyz/cosmosclient/client/tx"
-	"github.com/cosmos/gogoproto/proto"
-	prototypes "github.com/cosmos/gogoproto/types"
+	"github.com/gogo/protobuf/proto"
+	prototypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 
-	rpcclient "github.com/cometbft/cometbft/rpc/client"
-	ctypes "github.com/cometbft/cometbft/rpc/core/types"
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/ignite/cli/ignite/pkg/cosmosaccount"
 	"github.com/ignite/cli/ignite/pkg/cosmosfaucet"
@@ -101,8 +100,8 @@ type Client struct {
 	keyringDir         string
 
 	gas           string
-	gasPrices     string
 	gasAdjustment float64
+	gasPrices     string
 	fees          string
 }
 
@@ -184,13 +183,6 @@ func WithGasPrices(gasPrices string) Option {
 	}
 }
 
-// WithGasAdjustment sets the gas adjustment.
-func WithGasAdjustment(gasAdjustment float64) Option {
-	return func(c *Client) {
-		c.gasAdjustment = gasAdjustment
-	}
-}
-
 // WithFees sets the fees (e.g. 10uatom).
 func WithFees(fees string) Option {
 	return func(c *Client) {
@@ -198,13 +190,20 @@ func WithFees(fees string) Option {
 	}
 }
 
-// WithRPCClient sets a tendermint RPC client.
-// Already set by default.
-func WithRPCClient(rpc rpcclient.Client) Option {
+// WithGasAdjustment sets the gas adjustment (e.g. 1.3)
+func WithGasAdjustment(gasAdj float64) Option {
 	return func(c *Client) {
-		c.RPC = rpc
+		c.gasAdjustment = gasAdj
 	}
 }
+
+// WithRPCClient sets a tendermint RPC client.
+// Already set by default.
+// func WithRPCClient(rpc rpcclient.Client) Option {
+// 	return func(c *Client) {
+// 		c.RPC = rpc
+// 	}
+// }
 
 // WithAccountRetriever sets the account retriever
 // Already set by default.

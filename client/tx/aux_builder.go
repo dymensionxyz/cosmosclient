@@ -1,7 +1,7 @@
 package tx
 
 import (
-	"github.com/cosmos/gogoproto/proto"
+	"github.com/gogo/protobuf/proto"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
