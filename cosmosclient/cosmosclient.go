@@ -25,11 +25,12 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/dymensionxyz/cosmosclient/client/tx"
-	"github.com/gogo/protobuf/proto"
-	prototypes "github.com/gogo/protobuf/types"
+	"github.com/cosmos/gogoproto/proto"
+	prototypes "github.com/cosmos/gogoproto/types"
 	"github.com/pkg/errors"
 
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
+	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 
 	"github.com/ignite/cli/ignite/pkg/cosmosaccount"
 	"github.com/ignite/cli/ignite/pkg/cosmosfaucet"
@@ -71,8 +72,7 @@ const (
 // Client is a client to access your chain by querying and broadcasting transactions.
 type Client struct {
 	// RPC is Tendermint RPC.
-	RPC *HTTP
-	// RPC rpcclient.Client
+	RPC rpcclient.Client
 
 	// TxFactory is a Cosmos SDK tx factory.
 	TxFactory tx.Factory
@@ -101,8 +101,8 @@ type Client struct {
 	keyringDir         string
 
 	gas           string
-	gasAdjustment float64
 	gasPrices     string
+	gasAdjustment float64
 	fees          string
 }
 
@@ -184,6 +184,13 @@ func WithGasPrices(gasPrices string) Option {
 	}
 }
 
+// WithGasAdjustment sets the gas adjustment.
+func WithGasAdjustment(gasAdjustment float64) Option {
+	return func(c *Client) {
+		c.gasAdjustment = gasAdjustment
+	}
+}
+
 // WithFees sets the fees (e.g. 10uatom).
 func WithFees(fees string) Option {
 	return func(c *Client) {
@@ -191,20 +198,13 @@ func WithFees(fees string) Option {
 	}
 }
 
-// WithGasAdjustment sets the gas adjustment (e.g. 1.3)
-func WithGasAdjustment(gasAdj float64) Option {
-	return func(c *Client) {
-		c.gasAdjustment = gasAdj
-	}
-}
-
 // WithRPCClient sets a tendermint RPC client.
 // Already set by default.
-// func WithRPCClient(rpc rpcclient.Client) Option {
-// 	return func(c *Client) {
-// 		c.RPC = rpc
-// 	}
-// }
+func WithRPCClient(rpc rpcclient.Client) Option {
+	return func(c *Client) {
+		c.RPC = rpc
+	}
+}
 
 // WithAccountRetriever sets the account retriever
 // Already set by default.
@@ -234,7 +234,8 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 		apply(&c)
 	}
 
-	if c.RPC, err = NewHttp(c.nodeAddress, "/websocket"); err != nil {
+	if c.RPC == nil {
+		if c.RPC, err = rpchttp.New(c.nodeAddress, "/websocket"); err != nil {
 		return Client{}, err
 	}
 
@@ -288,10 +289,7 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 	// till here
 
 	c.context = c.newContext()
-	c.TxFactory = newFactory(c.context).
-		WithGasAdjustment(c.gasAdjustment).
-		WithGasPrices(c.gasPrices).
-		WithFees(c.fees)
+	c.TxFactory = newFactory(c.context)
 
 	return c, nil
 }
@@ -431,6 +429,15 @@ func (c Client) BroadcastTxWithProvision(accountName string, msgs ...sdktypes.Ms
 	// we add an additional amount to endure sufficient gas is provided
 	gas += 10000
 	txf = txf.WithGas(gas)
+	txf = txf.WithFees(c.fees)
+
+	if c.gasPrices != "" {
+		txf = txf.WithGasPrices(c.gasPrices)
+	}
+
+	if c.gasAdjustment != 0 && c.gasAdjustment != defaultGasAdjustment {
+		txf = txf.WithGasAdjustment(c.gasAdjustment)
+	}
 
 	// Return the provision function
 	return gas, func() (Response, error) {
@@ -578,6 +585,8 @@ func newFactory(clientCtx client.Context) tx.Factory {
 	return tx.Factory{}.
 		WithChainID(clientCtx.ChainID).
 		WithKeybase(clientCtx.Keyring).
+		WithGas(defaultGasLimit).
+		WithGasAdjustment(defaultGasAdjustment).
 		WithSignMode(signing.SignMode_SIGN_MODE_UNSPECIFIED).
 		WithAccountRetriever(clientCtx.AccountRetriever).
 		WithTxConfig(clientCtx.TxConfig)
