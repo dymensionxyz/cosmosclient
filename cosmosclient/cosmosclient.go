@@ -237,7 +237,7 @@ func New(options ...Option) (Client, error) {
 	}
 
 	if c.RPC == nil {
-		httpclient, err := rpchttp.NewWithClient(c.nodeAddress, "/websocket", nil)
+		httpclient, err := rpchttp.New(c.nodeAddress, "/websocket")
 		if err != nil {
 			return Client{}, err
 		}
