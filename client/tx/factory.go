@@ -5,15 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/pflag"
-
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 )
 
@@ -33,70 +29,9 @@ type Factory struct {
 	generateOnly       bool
 	memo               string
 	fees               sdk.Coins
-	tip                *tx.Tip
-	feeGranter         sdk.AccAddress
-	feePayer           sdk.AccAddress
 	gasPrices          sdk.DecCoins
 	signMode           signing.SignMode
 	simulateAndExecute bool
-}
-
-// NewFactoryCLI creates a new Factory.
-func NewFactoryCLI(clientCtx client.Context, flagSet *pflag.FlagSet) Factory {
-	signModeStr := clientCtx.SignModeStr
-
-	signMode := signing.SignMode_SIGN_MODE_UNSPECIFIED
-	switch signModeStr {
-	case flags.SignModeDirect:
-		signMode = signing.SignMode_SIGN_MODE_DIRECT
-	case flags.SignModeLegacyAminoJSON:
-		signMode = signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON
-	case flags.SignModeDirectAux:
-		signMode = signing.SignMode_SIGN_MODE_DIRECT_AUX
-	case flags.SignModeEIP191:
-		signMode = signing.SignMode_SIGN_MODE_EIP_191
-	}
-
-	accNum, _ := flagSet.GetUint64(flags.FlagAccountNumber)
-	accSeq, _ := flagSet.GetUint64(flags.FlagSequence)
-	gasAdj, _ := flagSet.GetFloat64(flags.FlagGasAdjustment)
-	memo, _ := flagSet.GetString(flags.FlagNote)
-	timeoutHeight, _ := flagSet.GetUint64(flags.FlagTimeoutHeight)
-
-	gasStr, _ := flagSet.GetString(flags.FlagGas)
-	gasSetting, _ := flags.ParseGasSetting(gasStr)
-
-	f := Factory{
-		txConfig:           clientCtx.TxConfig,
-		accountRetriever:   clientCtx.AccountRetriever,
-		keybase:            clientCtx.Keyring,
-		chainID:            clientCtx.ChainID,
-		offline:            clientCtx.Offline,
-		generateOnly:       clientCtx.GenerateOnly,
-		gas:                gasSetting.Gas,
-		simulateAndExecute: gasSetting.Simulate,
-		accountNumber:      accNum,
-		sequence:           accSeq,
-		timeoutHeight:      timeoutHeight,
-		gasAdjustment:      gasAdj,
-		memo:               memo,
-		signMode:           signMode,
-		feeGranter:         clientCtx.FeeGranter,
-		feePayer:           clientCtx.FeePayer,
-	}
-
-	feesStr, _ := flagSet.GetString(flags.FlagFees)
-	f = f.WithFees(feesStr)
-
-	tipsStr, _ := flagSet.GetString(flags.FlagTip)
-	// Add tips to factory. The tipper is necessarily the Msg signer, i.e.
-	// the from address.
-	f = f.WithTips(tipsStr, clientCtx.FromAddress.String())
-
-	gasPricesStr, _ := flagSet.GetString(flags.FlagGasPrices)
-	f = f.WithGasPrices(gasPricesStr)
-
-	return f
 }
 
 func (f Factory) AccountNumber() uint64                     { return f.accountNumber }
@@ -147,20 +82,6 @@ func (f Factory) WithFees(fees string) Factory {
 	}
 
 	f.fees = parsedFees
-	return f
-}
-
-// WithTips returns a copy of the Factory with an updated tip.
-func (f Factory) WithTips(tip string, tipper string) Factory {
-	parsedTips, err := sdk.ParseCoinsNormalized(tip)
-	if err != nil {
-		panic(err)
-	}
-
-	f.tip = &tx.Tip{
-		Tipper: tipper,
-		Amount: parsedTips,
-	}
 	return f
 }
 
@@ -229,18 +150,6 @@ func (f Factory) WithTimeoutHeight(height uint64) Factory {
 	return f
 }
 
-// WithFeeGranter returns a copy of the Factory with an updated fee granter.
-func (f Factory) WithFeeGranter(fg sdk.AccAddress) Factory {
-	f.feeGranter = fg
-	return f
-}
-
-// WithFeePayer returns a copy of the Factory with an updated fee granter.
-func (f Factory) WithFeePayer(fp sdk.AccAddress) Factory {
-	f.feePayer = fp
-	return f
-}
-
 // BuildUnsignedTx builds a transaction to be signed given a set of messages.
 // Once created, the fee, memo, and messages are set.
 func (f Factory) BuildUnsignedTx(msgs ...sdk.Msg) (client.TxBuilder, error) {
@@ -280,8 +189,6 @@ func (f Factory) BuildUnsignedTx(msgs ...sdk.Msg) (client.TxBuilder, error) {
 	tx.SetMemo(f.memo)
 	tx.SetFeeAmount(fees)
 	tx.SetGasLimit(f.gas)
-	tx.SetFeeGranter(f.feeGranter)
-	tx.SetFeePayer(f.feePayer)
 	tx.SetTimeoutHeight(f.TimeoutHeight())
 
 	return tx, nil

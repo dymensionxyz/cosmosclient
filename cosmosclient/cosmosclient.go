@@ -202,11 +202,11 @@ func WithGasAdjustment(gasAdj float64) Option {
 
 // WithRPCClient sets a tendermint RPC client.
 // Already set by default.
-// func WithRPCClient(rpc rpcclient.Client) Option {
-// 	return func(c *Client) {
-// 		c.RPC = rpc
-// 	}
-// }
+func WithRPCClient(rpc rpcclient.Client) Option {
+	return func(c *Client) {
+		c.RPC = rpc
+	}
+}
 
 // WithAccountRetriever sets the account retriever
 // Already set by default.
@@ -270,34 +270,46 @@ func New(options ...Option) (Client, error) {
 		c.keyringDir = c.homePath
 	}
 
-	//FIXME: encapsulate in custom account registery with etsec256k1 support
-	c.AccountRegistry, err = cosmosaccount.New(
-		cosmosaccount.WithKeyringServiceName(c.keyringServiceName),
-		cosmosaccount.WithKeyringBackend(c.keyringBackend),
-		cosmosaccount.WithHome(c.keyringDir),
-	)
-	if err != nil {
-		return Client{}, err
-	}
+	// custom account retriever with custom prefix
 	c.accountRetriever = AccountRetriever{addressPrefix: c.addressPrefix}
 
-	//Overwrite the keyring with EthSecp256k1 supported keyring
-	interfaceRegistry := codectypes.NewInterfaceRegistry()
-	cryptocodec.RegisterInterfaces(interfaceRegistry)
-	ethcodec.RegisterInterfaces(interfaceRegistry)
-	cdc := codec.NewProtoCodec(interfaceRegistry)
-	customKeyring, err := keyring.New(c.keyringServiceName, string(c.keyringBackend), c.homePath, os.Stdin, cdc, hd.EthSecp256k1Option())
+	// create account registry with ethsec256k1 support
+	c.AccountRegistry, err = NewAccountRegistryWithEthsec256k1Support(c.keyringServiceName, c.keyringBackend, c.keyringDir)
 	if err != nil {
 		return Client{}, err
 	}
-
-	c.AccountRegistry.Keyring = customKeyring
-	// till here
 
 	c.context = c.newContext()
 	c.TxFactory = newFactory(c.context)
 
 	return c, nil
+}
+
+func NewAccountRegistryWithEthsec256k1Support(
+	keyringServiceName string,
+	keyringBackend cosmosaccount.KeyringBackend,
+	keyringDir string,
+) (cosmosaccount.Registry, error) {
+	registry, err := cosmosaccount.New(
+		cosmosaccount.WithKeyringServiceName(keyringServiceName),
+		cosmosaccount.WithKeyringBackend(keyringBackend),
+		cosmosaccount.WithHome(keyringDir),
+	)
+	if err != nil {
+		return cosmosaccount.Registry{}, err
+	}
+
+	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	cryptocodec.RegisterInterfaces(interfaceRegistry)
+	ethcodec.RegisterInterfaces(interfaceRegistry)
+	cdc := codec.NewProtoCodec(interfaceRegistry)
+	customKeyring, err := keyring.New(keyringServiceName, string(keyringBackend), keyringDir, os.Stdin, cdc, hd.EthSecp256k1Option())
+	if err != nil {
+		return cosmosaccount.Registry{}, err
+	}
+	registry.Keyring = customKeyring
+
+	return registry, nil
 }
 
 // Account returns the account with name or address equal to nameOrAddress.
