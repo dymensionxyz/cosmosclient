@@ -28,6 +28,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
@@ -71,7 +73,8 @@ const (
 // Client is a client to access your chain by querying and broadcasting transactions.
 type Client struct {
 	// RPC is Tendermint RPC.
-	RPC rpcclient.Client
+	RPC      rpcclient.Client
+	WSEvents rpcclient.EventsClient
 
 	// TxFactory is a Cosmos SDK tx factory.
 	TxFactory tx.Factory
@@ -214,7 +217,7 @@ func WithAccountRetriever(accountRetriever client.AccountRetriever) Option {
 }
 
 // New creates a new client with given options.
-func New(ctx context.Context, options ...Option) (Client, error) {
+func New(options ...Option) (Client, error) {
 	c := Client{
 		nodeAddress:     defaultNodeAddress,
 		keyringBackend:  cosmosaccount.KeyringTest,
@@ -234,8 +237,12 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 	}
 
 	if c.RPC == nil {
-		if c.RPC, err = rpchttp.New(c.nodeAddress, "/websocket"); err != nil {
-		return Client{}, err
+		httpclient, err := rpchttp.NewWithClient(c.nodeAddress, "/websocket", nil)
+		if err != nil {
+			return Client{}, err
+		}
+		c.RPC = httpclient
+		c.WSEvents = httpclient
 	}
 
 	// // Wrap RPC client to have more contextualized errors
@@ -244,7 +251,7 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 	// 	nodeAddress: c.nodeAddress,
 	// }
 
-	statusResp, err := c.RPC.Status(ctx)
+	statusResp, err := c.RPC.Status(context.TODO())
 	if err != nil {
 		return Client{}, err
 	}
