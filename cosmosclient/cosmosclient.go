@@ -221,7 +221,7 @@ func New(options ...Option) (Client, error) {
 	c := Client{
 		nodeAddress:     defaultNodeAddress,
 		keyringBackend:  cosmosaccount.KeyringTest,
-		addressPrefix:   "cosmos",
+		addressPrefix:   "dym",
 		faucetAddress:   defaultFaucetAddress,
 		faucetDenom:     defaultFaucetDenom,
 		faucetMinAmount: defaultFaucetMinAmount,
@@ -245,13 +245,7 @@ func New(options ...Option) (Client, error) {
 		c.WSEvents = httpclient
 	}
 
-	// // Wrap RPC client to have more contextualized errors
-	// c.RPC = rpcWrapper{
-	// 	Client:      c.RPC,
-	// 	nodeAddress: c.nodeAddress,
-	// }
-
-	statusResp, err := c.RPC.Status(context.TODO())
+	statusResp, err := c.RPC.Status(context.Background())
 	if err != nil {
 		return Client{}, err
 	}
@@ -285,6 +279,7 @@ func New(options ...Option) (Client, error) {
 	return c, nil
 }
 
+// NewAccountRegistryWithEthsec256k1Support creates a new account registry with ethsec256k1 support.
 func NewAccountRegistryWithEthsec256k1Support(
 	keyringServiceName string,
 	keyringBackend cosmosaccount.KeyringBackend,
@@ -394,13 +389,11 @@ func (c Client) Status(ctx context.Context) (*ctypes.ResultStatus, error) {
 
 // BroadcastTx creates and broadcasts a tx with given messages for account.
 func (c Client) BroadcastTx(accountName string, msgs ...sdktypes.Msg) (Response, error) {
-	// txService, err := c.CreateTx(ctx, account, msgs...)
 	_, broadcast, err := c.BroadcastTxWithProvision(accountName, msgs...)
 	if err != nil {
 		return Response{}, err
 	}
 	return broadcast()
-	// return txService.Broadcast(ctx)
 }
 
 // BroadcastTxWithProvision creates and broadcasts a tx with given messages for account.
