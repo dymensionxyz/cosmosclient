@@ -213,8 +213,8 @@ func Sign(txf Factory, name string, txBuilder client.TxBuilder, overwriteSig boo
 		ChainID:       txf.chainID,
 		AccountNumber: txf.accountNumber,
 		Sequence:      txf.sequence,
+		PubKey:        pubKey,
 		// THIS IS REMOVED IN OUR FORK
-		// PubKey:        pubKey,
 		// Address:       sdk.AccAddress(pubKey.Address()).String(),
 	}
 
