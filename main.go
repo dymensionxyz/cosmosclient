@@ -9,6 +9,12 @@ import (
 	"github.com/dymensionxyz/cosmosclient/cosmosclient"
 )
 
+const (
+	eventStateUpdate          = "state_update.rollapp_id='rollappevm_1234-1' AND state_update.status='PENDING'"
+	eventSequencersListUpdate = "create_sequencer.rollapp_id='rollappevm_1234-1'"
+	eventRotationStarted      = "rotation_started.rollapp_id='rollappevm_1234-1'"
+)
+
 func main() {
 	// Create a new RPC client
 
@@ -35,6 +41,7 @@ func main() {
 	eventQuery = "tm.event = 'Tx' AND coin_received.receiver = 'dym17xpfvakm2amg962yls6f84z3kell8c5lzy0xwn'"
 	eventQuery = "coin_received.receiver = 'dym1ssx7j96d9cxestj55f05z93e36cd6nmj2rz5zv'"
 	eventQuery = "tm.event = 'NewBlock'"
+	eventQuery = eventSequencersListUpdate
 
 	subscription, err := rpcClient.WSEvents.Subscribe(context.Background(), fmt.Sprintf("example-client-%d", rand.Int()), eventQuery)
 	if err != nil {
