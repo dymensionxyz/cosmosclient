@@ -62,12 +62,6 @@ const (
 	defaultFaucetAddress   = "http://localhost:4500"
 	defaultFaucetDenom     = "token"
 	defaultFaucetMinAmount = 100
-
-	defaultTXsPerPage = 30
-
-	searchHeight = "tx.height"
-
-	orderAsc = "asc"
 )
 
 // Client is a client to access your chain by querying and broadcasting transactions.
@@ -427,18 +421,13 @@ func (c Client) BroadcastTxWithProvision(accountName string, msgs ...sdktypes.Ms
 		if err != nil {
 			return 0, nil, err
 		}
-		// the simulated gas can vary from the actual gas needed for a real transaction
-		// we add an amount to ensure sufficient gas is provided
-		gas += 20000
 	} else {
 		gas, err = strconv.ParseUint(c.gas, 10, 64)
 		if err != nil {
 			return 0, nil, err
 		}
 	}
-	// the simulated gas can vary from the actual gas needed for a real transaction
-	// we add an additional amount to endure sufficient gas is provided
-	gas += 10000
+
 	txf = txf.WithGas(gas)
 	txf = txf.WithFees(c.fees)
 
