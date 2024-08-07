@@ -15,12 +15,7 @@ import (
 )
 
 var (
-	_ client.Account          = authtypes.AccountI(nil)
 	_ client.AccountRetriever = AccountRetriever{}
-)
-
-const (
-	AccountPrefixCosmos = "cosmos"
 )
 
 // AccountRetriever defines the properties of a type that can be used to
@@ -43,11 +38,7 @@ func (ar AccountRetriever) GetAccountWithHeight(clientCtx client.Context, addr s
 	var header metadata.MD
 
 	queryClient := authtypes.NewQueryClient(clientCtx)
-	addressPrefix := ar.addressPrefix
-	if addressPrefix == "" {
-		addressPrefix = AccountPrefixCosmos
-	}
-	bech32Addr, err := bech32.ConvertAndEncode(addressPrefix, addr)
+	bech32Addr, err := bech32.ConvertAndEncode(ar.addressPrefix, addr)
 	if err != nil {
 		return nil, 0, err
 	}
