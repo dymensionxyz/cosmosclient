@@ -40,8 +40,8 @@ func main() {
 	eventQuery = "tm.event = 'Tx'"
 	eventQuery = "tm.event = 'Tx' AND coin_received.receiver = 'dym17xpfvakm2amg962yls6f84z3kell8c5lzy0xwn'"
 	eventQuery = "coin_received.receiver = 'dym1ssx7j96d9cxestj55f05z93e36cd6nmj2rz5zv'"
-	eventQuery = "tm.event = 'NewBlock'"
 	eventQuery = eventSequencersListUpdate
+	eventQuery = "tm.event = 'NewBlock'"
 
 	subscription, err := rpcClient.WSEvents.Subscribe(context.Background(), fmt.Sprintf("example-client-%d", rand.Int()), eventQuery)
 	if err != nil {
