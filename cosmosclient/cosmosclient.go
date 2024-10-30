@@ -19,25 +19,24 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/dymensionxyz/cosmosclient/client/tx"
+	ethcodec "github.com/evmos/evmos/v12/crypto/codec"
+	"github.com/evmos/evmos/v12/crypto/hd"
 	"github.com/gogo/protobuf/proto"
 	prototypes "github.com/gogo/protobuf/types"
+	"github.com/ignite/cli/ignite/pkg/cosmosaccount"
+	"github.com/ignite/cli/ignite/pkg/cosmosfaucet"
 	"github.com/pkg/errors"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
-
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	"github.com/ignite/cli/ignite/pkg/cosmosaccount"
-	"github.com/ignite/cli/ignite/pkg/cosmosfaucet"
-
-	ethcodec "github.com/evmos/evmos/v12/crypto/codec"
-	"github.com/evmos/evmos/v12/crypto/hd"
+	"github.com/dymensionxyz/cosmosclient/client/tx"
 )
 
 var (
@@ -89,6 +88,7 @@ type Client struct {
 	useFaucet       bool
 	faucetAddress   string
 	faucetDenom     string
+	feeGranter      string
 	faucetMinAmount uint64
 
 	homePath           string
@@ -162,6 +162,12 @@ func WithUseFaucet(faucetAddress, denom string, minAmount uint64) Option {
 		if minAmount != 0 {
 			c.faucetMinAmount = minAmount
 		}
+	}
+}
+
+func WithFeeGranter(feeGranter string) Option {
+	return func(c *Client) {
+		c.feeGranter = feeGranter
 	}
 }
 
@@ -268,6 +274,15 @@ func New(options ...Option) (Client, error) {
 	}
 
 	c.context = c.newContext()
+
+	if c.feeGranter != "" {
+		_, bytes, err := bech32.DecodeAndConvert(c.feeGranter)
+		if err != nil {
+			return Client{}, errors.Wrap(err, "invalid fee granter address")
+		}
+		c.context = c.context.WithFeeGranterAddress(bytes)
+	}
+
 	c.TxFactory = newFactory(c.context)
 
 	return c, nil
@@ -558,7 +573,7 @@ func (c Client) newContext() client.Context {
 		marshaler         = codec.NewProtoCodec(interfaceRegistry)
 		txConfig          = authtx.NewTxConfig(marshaler, authtx.DefaultSignModes)
 	)
-	//Register ethermint interfaces
+	// Register ethermint interfaces
 	ethcodec.RegisterInterfaces(interfaceRegistry)
 	authtypes.RegisterInterfaces(interfaceRegistry)
 	cryptocodec.RegisterInterfaces(interfaceRegistry)
