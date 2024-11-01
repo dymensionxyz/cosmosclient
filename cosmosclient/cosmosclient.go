@@ -77,8 +77,9 @@ type Client struct {
 	context client.Context
 
 	// AccountRegistry is the registry to access accounts.
-	AccountRegistry  cosmosaccount.Registry
-	accountRetriever client.AccountRetriever
+	AccountRegistry          cosmosaccount.Registry
+	accountRetriever         client.AccountRetriever
+	accountRegistryOverrides map[string]*codectypes.Any
 
 	addressPrefix string
 
@@ -210,6 +211,23 @@ func WithAccountRetriever(accountRetriever client.AccountRetriever) Option {
 	}
 }
 
+type OverridePubKey struct {
+	Name   string
+	PubKey string
+	Type   string
+}
+
+func WithAccountPubKeyOverride(overrideKeys ...OverridePubKey) Option {
+	return func(c *Client) {
+		if c.accountRegistryOverrides == nil {
+			c.accountRegistryOverrides = make(map[string]*codectypes.Any)
+		}
+		for _, key := range overrideKeys {
+			c.accountRegistryOverrides[key.Name] = PackPubKey(key.PubKey, key.Type)
+		}
+	}
+}
+
 // New creates a new client with given options.
 func New(options ...Option) (Client, error) {
 	c := Client{
@@ -267,7 +285,23 @@ func New(options ...Option) (Client, error) {
 		return Client{}, err
 	}
 
-	c.context = c.newContext()
+	// Overwrite the keyring with EthSecp256k1 supported keyring
+	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	cryptocodec.RegisterInterfaces(interfaceRegistry)
+	ethcodec.RegisterInterfaces(interfaceRegistry)
+	cdc := codec.NewProtoCodec(interfaceRegistry)
+	customKeyring, err := keyring.New(c.keyringServiceName, string(c.keyringBackend), c.homePath, os.Stdin, cdc, hd.EthSecp256k1Option())
+	if err != nil {
+		return Client{}, err
+	}
+
+	fakeKR := keyringFake{
+		customKeyring,
+		c.accountRegistryOverrides,
+	}
+
+	c.AccountRegistry.Keyring = fakeKR
+	c.context = c.newContext().WithKeyring(customKeyring)
 	c.TxFactory = newFactory(c.context)
 
 	return c, nil
@@ -562,7 +596,7 @@ func (c Client) newContext() client.Context {
 		marshaler         = codec.NewProtoCodec(interfaceRegistry)
 		txConfig          = authtx.NewTxConfig(marshaler, authtx.DefaultSignModes)
 	)
-	//Register ethermint interfaces
+	// Register ethermint interfaces
 	ethcodec.RegisterInterfaces(interfaceRegistry)
 	authtypes.RegisterInterfaces(interfaceRegistry)
 	cryptocodec.RegisterInterfaces(interfaceRegistry)
