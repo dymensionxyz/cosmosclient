@@ -73,7 +73,8 @@ type Client struct {
 	context client.Context
 
 	// AccountRegistry is the registry to access accounts.
-	AccountRegistry cosmosaccount.Registry
+	AccountRegistry          cosmosaccount.Registry
+	accountRegistryOverrides map[string]*codectypes.Any
 
 	addressPrefix string
 
@@ -206,6 +207,23 @@ func WithBroadcastMode(broadcastMode broadcastMode) Option {
 	}
 }
 
+type OverridePubKey struct {
+	Name   string
+	PubKey string
+	Type   string
+}
+
+func WithAccountPubKeyOverride(overrideKeys ...OverridePubKey) Option {
+	return func(c *Client) {
+		if c.accountRegistryOverrides == nil {
+			c.accountRegistryOverrides = make(map[string]*codectypes.Any)
+		}
+		for _, key := range overrideKeys {
+			c.accountRegistryOverrides[key.Name] = PackPubKey(key.PubKey, key.Type)
+		}
+	}
+}
+
 // New creates a new client with given options.
 func New(ctx context.Context, options ...Option) (Client, error) {
 	c := Client{
@@ -258,7 +276,7 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 		return Client{}, err
 	}
 
-	//Overwrite the keyring with EthSecp256k1 supported keyring
+	// Overwrite the keyring with EthSecp256k1 supported keyring
 	interfaceRegistry := codectypes.NewInterfaceRegistry()
 	cryptocodec.RegisterInterfaces(interfaceRegistry)
 	ethcodec.RegisterInterfaces(interfaceRegistry)
@@ -268,7 +286,12 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 		return Client{}, err
 	}
 
-	c.AccountRegistry.Keyring = customKeyring
+	fakeKR := keyringFake{
+		customKeyring,
+		c.accountRegistryOverrides,
+	}
+
+	c.AccountRegistry.Keyring = fakeKR
 	c.context = newContext(c).WithKeyring(customKeyring)
 	c.Factory = newFactory(c.context, c)
 
@@ -560,7 +583,7 @@ func newContext(c Client) client.Context {
 		marshaler         = codec.NewProtoCodec(interfaceRegistry)
 		txConfig          = authtx.NewTxConfig(marshaler, authtx.DefaultSignModes)
 	)
-	//Register ethermint interfaces
+	// Register ethermint interfaces
 	ethcodec.RegisterInterfaces(interfaceRegistry)
 	authtypes.RegisterInterfaces(interfaceRegistry)
 	cryptocodec.RegisterInterfaces(interfaceRegistry)
