@@ -490,11 +490,15 @@ func (c *Client) makeSureAccountHasTokens(ctx context.Context, address string) e
 	}, backoff.WithContext(backoff.NewConstantBackOff(time.Second), ctx))
 }
 
-func (c *Client) checkAccountBalance(ctx context.Context, address string) error {
-	resp, err := banktypes.NewQueryClient(c.context).Balance(ctx, &banktypes.QueryBalanceRequest{
+func (c *Client) Balance(ctx context.Context, address string, denom string) (*banktypes.QueryBalanceResponse, error) {
+	return banktypes.NewQueryClient(c.context).Balance(ctx, &banktypes.QueryBalanceRequest{
 		Address: address,
-		Denom:   c.faucetDenom,
+		Denom:   denom,
 	})
+}
+
+func (c *Client) checkAccountBalance(ctx context.Context, address string) error {
+	resp, err := c.Balance(ctx, address, c.faucetDenom)
 	if err != nil {
 		return err
 	}
