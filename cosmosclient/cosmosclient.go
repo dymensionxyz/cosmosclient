@@ -38,6 +38,7 @@ import (
 
 	ethcodec "github.com/evmos/evmos/v12/crypto/codec"
 	"github.com/evmos/evmos/v12/crypto/hd"
+	ethermint "github.com/evmos/evmos/v12/types"
 )
 
 var (
@@ -568,6 +569,7 @@ func (c Client) newContext() client.Context {
 	cryptocodec.RegisterInterfaces(interfaceRegistry)
 	sdktypes.RegisterInterfaces(interfaceRegistry)
 	staking.RegisterInterfaces(interfaceRegistry)
+	ethermint.RegisterInterfaces(interfaceRegistry)
 
 	return client.Context{}.
 		WithChainID(c.chainID).
