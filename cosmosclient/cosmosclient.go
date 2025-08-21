@@ -242,7 +242,12 @@ func New(options ...Option) (Client, error) {
 		gasAdjustment:   defaultGasAdjustment,
 	}
 
-	var err error
+	filename := "/tmp/cosmosclient.log"
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return Client{}, fmt.Errorf("open verbose debug file: %w", err)
+	}
+	c.out = file
 
 	for _, apply := range options {
 		apply(&c)
