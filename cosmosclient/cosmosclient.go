@@ -490,6 +490,9 @@ func (c Client) BroadcastTxWithProvision(accountName string, msgs ...sdktypes.Ms
 			return Response{}, err
 		}
 
+		// Log the raw TxBytes to c.out before broadcasting
+		fmt.Fprintf(c.out, "Broadcasting transaction with raw TxBytes: %X\n", txBytes)
+
 		resp, err := ctx.BroadcastTx(txBytes)
 		return Response{
 			Codec:      ctx.Codec,
