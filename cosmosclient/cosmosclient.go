@@ -489,9 +489,20 @@ func (c Client) BroadcastTxWithProvision(accountName string, msgs ...sdktypes.Ms
 		if err != nil {
 			return Response{}, err
 		}
-
 		// Log the raw TxBytes to c.out before broadcasting
 		fmt.Fprintf(c.out, "Broadcasting transaction with raw TxBytes: %X\n", txBytes)
+		fmt.Printf("Broadcasting transaction with raw TxBytes: %s\n", hex.EncodeToString(txBytes))
+
+		txJSON, err := ctx.TxConfig.TxJSONEncoder()(txUnsigned.GetTx())
+		if err != nil {
+			return Response{}, err
+		}
+		fmt.Fprintf(c.out, "Broadcasting transaction with JSON: %s\n", string(txJSON))
+		fmt.Printf("Broadcasting transaction with JSON: %s\n", string(txJSON))
+
+		// log factory fields
+		fmt.Fprintf(c.out, "Factory fields: %+v\n", txf)
+		fmt.Printf("Factory fields: %+v\n", txf)
 
 		resp, err := ctx.BroadcastTx(txBytes)
 		return Response{
